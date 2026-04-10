@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Analysis - Student Dropout Prevention System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-exclamation-triangle"></i> Risk Analysis</h1>
+    <button class="btn btn-warning" onclick="location.reload()">
+        <i class="fas fa-sync"></i> Refresh Analysis
+    </button>
+</div>
+
+<!-- Risk Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                <h4 class="card-title">{{ students|selectattr('risk_profile.risk_level','equalto','Low')|list|length }}</h4>
+                <p class="card-text text-muted">Low Risk</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                <h4 class="card-title">{{ students|selectattr('risk_profile.risk_level','equalto','Medium')|list|length }}</h4>
+                <p class="card-text text-muted">Medium Risk</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                <h4 class="card-title">{{ students|selectattr('risk_profile.risk_level','in',['High','Critical'])|list|length }}</h4>
+                <p class="card-text text-muted">High Risk</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                <h4 class="card-title">{% if students|length > 0 %}{{ ((students|selectattr('risk_profile.risk_level','in',['High','Critical'])|list|length / students|length)*100)|round(1) }}%{% else %}0%{% endif %}</h4>
+                <p class="card-text text-muted">Risk Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Students Table -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-list"></i> Student Risk Profiles</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>CGPA</th>
+                        <th>Attendance</th>
+                        <th>Risk Level</th>
+                        <th>Risk Factors</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+{% for student in students %}
+<tr>
+  <td><span class="badge bg-secondary">{{ student.student_id }}</span></td>
+  <td>{{ student.first_name }} {{ student.last_name }}</td>
+  <td>{{ student.gpa or 'N/A' }}</td>
+  <td>{{ student.risk_profile.attendance_rate|round(1) if student.risk_profile else 'N/A' }}%</td>
+  <td>
+    {% set level = student.risk_profile.risk_level if student.risk_profile else 'Low' %}
+    <span class="badge {% if level == 'Critical' %}bg-dark{% elif level == 'High' %}bg-danger{% elif level == 'Medium' %}bg-warning{% else %}bg-success{% endif %}">
+      {{ level }} Risk
+    </span>
+  </td>
+  <td><small>{{ student.risk_profile.risk_reasons if student.risk_profile else '—' }}</small></td>
+  <td>
+    <div class="btn-group btn-group-sm">
+      <a href="/student/{{ student.id }}" class="btn btn-outline-primary"><i class="fas fa-eye"></i></a>
+      <a href="/api/update_risk/{{ student.id }}" class="btn btn-outline-warning"><i class="fas fa-sync"></i></a>
+    </div>
+  </td>
+</tr>
+{% else %}
+<tr><td colspan="7" class="text-center text-muted">No students found</td></tr>
+{% endfor %}
+</tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
